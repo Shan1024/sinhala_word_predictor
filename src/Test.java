@@ -1,3 +1,4 @@
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -9,7 +10,9 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.Locale;
 import javax.swing.AbstractAction;
+import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -33,11 +36,15 @@ public class Test {
 
         JFrame frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setTitle("සිංහල වචන අනුමාන කරණය");
 
         //JTextField f = new JTextField(10);
-        JTextArea f = new JTextArea();
-        f.setPreferredSize(new Dimension(600, 400));
-        f.setFont(SINHALA_FONT);
+        JTextArea textArea = new JTextArea();
+        textArea.setPreferredSize(new Dimension(600, 400));
+        textArea.setFont(SINHALA_FONT);
+        
+        
+        
         //JEditorPane f = new JEditorPane();
 
         //create words for dictionary could also use null as parameter for AutoSuggestor(..,..,null,..,..,..,..) and than call AutoSuggestor#setDictionary after AutoSuggestr insatnce has been created
@@ -51,7 +58,7 @@ public class Test {
         words.add("අපි");
         words.add("බස්");
         words.add("කෝච්චියේ");
-        
+
         words.add("hello");
         words.add("heritage");
         words.add("happiness");
@@ -63,7 +70,7 @@ public class Test {
         words.add("world");
         words.add("wall");
 
-        AutoSuggestor autoSuggestor = new AutoSuggestor(f, frame, words, Color.GRAY.brighter(), Color.BLUE, Color.RED, 0.75f) {
+        AutoSuggestor autoSuggestor = new AutoSuggestor(textArea, frame, words, Color.GRAY.brighter(), Color.BLUE, Color.RED, 0.75f) {
             @Override
             boolean wordTyped(String typedWord) {
                 System.out.println(typedWord);
@@ -71,17 +78,36 @@ public class Test {
             }
         };
 
-        JPanel p = new JPanel();
+        JPanel panel = new JPanel();
+        panel.add(textArea);
 
-        p.add(f);
-
-        frame.add(p);
-
+        frame.add(panel);
+        
+        //Setting locale to Sinhala
+        Locale loc = new Locale("si", "LK");
+        textArea.setLocale(loc);
+        textArea.getInputContext().selectInputMethod(loc);
+        
+        
         frame.pack();
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 
     public static void main(String[] args) {
+
+        try {
+            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
+                    System.out.println("LnF applied.");
+                    break;
+                }
+            }
+        } catch (Exception ex) {
+            System.out.println("Exception: " + ex);
+        }
+
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
@@ -255,12 +281,18 @@ class AutoSuggestor {
     public String getCurrentlyTypedWord() {//get newest word after last white spaceif any or the first word if no white spaces
         String text = textComp.getText();
         String wordBeingTyped = "";
-        text = text.replaceAll("(\\r|\\n)", " ");
+        text = text.replaceAll("(\\r|\\n)", " ");//-----------------------XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX REGEX
         if (text.contains(" ")) {
             int tmp = text.lastIndexOf(" ");
             if (tmp >= currentIndexOfSpace) {
                 currentIndexOfSpace = tmp;
                 wordBeingTyped = text.substring(text.lastIndexOf(" "));
+            }
+        } else if (text.contains(".")) {
+            int tmp = text.lastIndexOf(".");
+            if (tmp >= currentIndexOfSpace) {
+                currentIndexOfSpace = tmp;
+                wordBeingTyped = text.substring(text.lastIndexOf("."));
             }
         } else {
             wordBeingTyped = text;
@@ -411,22 +443,21 @@ class SuggestionLabel extends JLabel {
                 autoSuggestionsPopUpWindow.setVisible(false);
             }
         });
-        
+
         this.addMouseListener(new MouseAdapter() {
 
             @Override
             public void mouseEntered(MouseEvent e) {
                 super.mouseEntered(e); //To change body of generated methods, choose Tools | Templates.
-              setBorder(new LineBorder(suggestionBorderColor));
+                setBorder(new LineBorder(suggestionBorderColor));
             }
 
             @Override
             public void mouseExited(MouseEvent e) {
                 setBorder(null);
             }
-            
-            
-});
+
+        });
     }
 
     public void setFocused(boolean focused) {

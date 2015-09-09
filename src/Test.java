@@ -1,4 +1,3 @@
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -12,7 +11,6 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Locale;
 import javax.swing.AbstractAction;
-import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -38,15 +36,10 @@ public class Test {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setTitle("සිංහල වචන අනුමාන කරණය");
 
-        //JTextField f = new JTextField(10);
         JTextArea textArea = new JTextArea();
         textArea.setPreferredSize(new Dimension(600, 400));
         textArea.setFont(SINHALA_FONT);
         
-        
-        
-        //JEditorPane f = new JEditorPane();
-
         //create words for dictionary could also use null as parameter for AutoSuggestor(..,..,null,..,..,..,..) and than call AutoSuggestor#setDictionary after AutoSuggestr insatnce has been created
         ArrayList<String> words = new ArrayList<>();
         words.add("සිංහල");
@@ -87,7 +80,6 @@ public class Test {
         Locale loc = new Locale("si", "LK");
         textArea.setLocale(loc);
         textArea.getInputContext().selectInputMethod(loc);
-        
         
         frame.pack();
         frame.setLocationRelativeTo(null);
@@ -142,6 +134,7 @@ class AutoSuggestor {
             checkForAndShowSuggestions();
         }
     };
+    
     private final Color suggestionsTextColor;
     private final Color suggestionFocusedColor;
 
@@ -329,7 +322,7 @@ class AutoSuggestor {
             try {
                 rect = textComp.getUI().modelToView(textComp, textComp.getCaret().getDot());//get carets position
             } catch (BadLocationException ex) {
-                ex.printStackTrace();
+//                ex.printStackTrace();
             }
 
             windowX = (int) (rect.getX() + 15) + this.getContainer().getLocation().x;

@@ -1,6 +1,7 @@
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.*;
+
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -9,7 +10,6 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.LinkedList;
 
 /*
@@ -17,8 +17,8 @@ import java.util.LinkedList;
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
+
 /**
- *
  * @author Shan
  */
 public class Predictor {
@@ -33,7 +33,7 @@ public class Predictor {
                 .setPrettyPrinting().create();
     }
 
-    public static void loadPredictor() {
+    public void loadPredictor() {
 
         BufferedReader br;
         try {
@@ -46,7 +46,7 @@ public class Predictor {
 
             String json = gson.toJson(nGram);
 
-            System.out.println("Dictionary:\n" + json);
+            System.out.println("Predictor:\n" + json);
 
         } catch (FileNotFoundException ex) {
             System.out.println("Ex: " + ex);
@@ -54,7 +54,7 @@ public class Predictor {
 
     }
 
-    public static void savePredictor() {
+    public void savePredictor() {
 
         String json = gson.toJson(nGram);
 
@@ -69,19 +69,19 @@ public class Predictor {
 
     }
 
-    public static boolean containsKey(String key) {
+    public boolean containsKey(String key) {
         return nGram.containsKey(key);
     }
 
     /* Needed for scope */
-    public static void addKey(String key, String word) {
+    public void addKey(String key, String word) {
         HashMap<String, Double> result = new HashMap<String, Double>();
         result.put(word, 1.0);
         nGram.put(key, result);
     }
 
     /* Prediction methods */
-    public static String predict(String key) {
+    public  LinkedList<Entry>  predict(String key) {
         String temp = "";
 
         LinkedList<Entry> entries = new LinkedList<>();
@@ -98,13 +98,15 @@ public class Predictor {
             Collections.sort(entries);
             System.out.println(entries);
 
-            return temp;
+            return entries;
+//            return entries.get(0).getWord();
+//            return temp;
         } else {
-            return "";
+            return null;
         }
     }
 
-    public static void addSentence(String sentence) {
+    public void addSentence(String sentence) {
 
         sentence = sentence.toLowerCase();
 
@@ -129,7 +131,7 @@ public class Predictor {
 
     }
 
-    static final HashMap<String, Double> createResult(String s) {
+    private static final HashMap<String, Double> createResult(String s) {
         HashMap<String, Double> result = new HashMap<String, Double>();
         result.put(s, 1.0);
         return result;

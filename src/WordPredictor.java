@@ -1,16 +1,23 @@
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
+import javafx.scene.input.KeyCode;
+
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.Rectangle;
 import java.awt.Window;
-import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.Locale;
 import javax.swing.AbstractAction;
 import javax.swing.JComponent;
@@ -30,7 +37,7 @@ import javax.swing.text.JTextComponent;
 
 public class WordPredictor {
 
-    private static final Font SINHALA_FONT = new java.awt.Font("Iskoola Pota", 0, 18);
+    private static final Font SINHALA_FONT = new Font("Iskoola Pota", 0, 18);
 
     public WordPredictor() {
 
@@ -44,26 +51,26 @@ public class WordPredictor {
 
         //create words for dictionary could also use null as parameter for AutoSuggestor(..,..,null,..,..,..,..) and than call AutoSuggestor#setDictionary after AutoSuggestr insatnce has been created
         ArrayList<String> words = new ArrayList<>();
-        words.add("සිංහල");
-        words.add("වචන");
-        words.add("මම");
-        words.add("අද");
-        words.add("ගෙදර");
-        words.add("යනවා");
-        words.add("අපි");
-        words.add("බස්");
-        words.add("කෝච්චියේ");
-
-        words.add("hello");
-        words.add("heritage");
-        words.add("happiness");
-        words.add("goodbye");
-        words.add("cruel");
-        words.add("car");
-        words.add("war");
-        words.add("will");
-        words.add("world");
-        words.add("wall");
+//        words.add("සිංහල");
+//        words.add("වචන");
+//        words.add("මම");
+//        words.add("අද");
+//        words.add("ගෙදර");
+//        words.add("යනවා");
+//        words.add("අපි");
+//        words.add("බස්");
+//        words.add("කෝච්චියේ");
+//
+//        words.add("hello");
+//        words.add("heritage");
+//        words.add("happiness");
+//        words.add("goodbye");
+//        words.add("cruel");
+//        words.add("car");
+//        words.add("war");
+//        words.add("will");
+//        words.add("world");
+//        words.add("wall");
 
         AutoSuggestor autoSuggestor = new AutoSuggestor(textArea, frame, words, Color.GRAY.brighter(), Color.BLUE, Color.RED, 0.75f) {
             @Override
@@ -129,13 +136,26 @@ class AutoSuggestor {
     private JPanel suggestionsPanel;
     private JWindow autoSuggestionPopUpWindow;
     private String typedWord;
-    private final ArrayList<String> dictionary = new ArrayList<>();
+    private ArrayList<String> dictionary = new ArrayList<>();
+    private Predictor predictor;
     private int currentIndexOfSpace, tW, tH;
-   
+
     private DocumentListener documentListener = new DocumentListener() {
         @Override
         public void insertUpdate(DocumentEvent de) {
-            checkForAndShowSuggestions();
+            String typed = textComp.getText().substring(de.getOffset());
+            System.out.println("Typed: " + typed);
+
+            if (typed.equals(" ") || typed.equals(".")) {
+
+                updateDictionary();
+                updatePredictor();
+                System.out.println("Space or . typed");
+                checkAndPredict();
+            } else {
+                checkForAndShowSuggestions();
+            }
+
         }
 
         @Override
@@ -149,20 +169,120 @@ class AutoSuggestor {
         }
     };
 
+    private void updateDictionary() {
+
+        String text = textComp.getText().replaceAll("\\.", " ").trim();
+//        System.out.println("Text: "+text);
+        String word = text;
+
+        int lastSpaceLocation = text.lastIndexOf(" ");
+
+        if (lastSpaceLocation > -1) {
+            word = text.substring(lastSpaceLocation);
+        }
+
+//        int lastPeriodLocation = text.lastIndexOf(".");
+//        int lastSpaceLocation = text.lastIndexOf(" ");
+
+//        if (lastPeriodLocation > -1) {
+//
+//            word = text.substring(lastPeriodLocation);
+//
+//            lastSpaceLocation = word.lastIndexOf(" ");
+//
+//            if (lastSpaceLocation > -1) {
+//                word = word.substring(lastSpaceLocation);
+//            } else {
+//                if (text.equals(".")) {
+//                    word =
+//                }
+//            }
+//
+//
+//        } else {
+//            if (lastSpaceLocation > -1) {
+//                word = text.substring(lastSpaceLocation);
+//            }
+//        }
+
+
+//        System.out.println("Checking Last Word..... ");
+        System.out.println("Adding last word to the dictionary: " + word.trim());
+        addToDictionary(word.trim());
+        System.out.println("Dictionary: " + dictionary);
+
+    }
+
+    private void updatePredictor() {
+        String text = textComp.getText().trim();
+        String word;
+
+        int lastPeriodLocation = text.lastIndexOf(".");
+        int lastSpaceLocation = text.lastIndexOf(" ");
+
+        if (lastPeriodLocation > -1) {
+
+            word = text.substring(lastPeriodLocation);
+
+            lastSpaceLocation = word.lastIndexOf(" ");
+
+            if (lastSpaceLocation > -1) {
+                word = word.substring(lastSpaceLocation);
+            } else {
+                if (text.equals(".")) {
+//                    word =
+                }
+            }
+
+
+        } else {
+            if (lastSpaceLocation > -1) {
+                word = text.substring(lastSpaceLocation);
+            }
+        }
+
+    }
+
     private final Color suggestionsTextColor;
     private final Color suggestionFocusedColor;
 
     public AutoSuggestor(JTextComponent textComp, Window mainWindow, ArrayList<String> words, Color popUpBackground, Color textColor, Color suggestionFocusedColor, float opacity) {
-      
+
         this.textComp = textComp;
         this.suggestionsTextColor = textColor;
         this.container = mainWindow;
         this.suggestionFocusedColor = suggestionFocusedColor;
         this.textComp.getDocument().addDocumentListener(documentListener);
 
-        loadDictionary();
+//        textComp.addKeyListener(new KeyListener() {
+//            @Override
+//            public void keyTyped(KeyEvent keyEvent) {
+//                System.out.println("key typed");
+////                if(keyEvent.getKeyCode()== KeyEvent.VK_SPACE){
+//
+////                }
+//            }
+//
+//            @Override
+//            public void keyPressed(KeyEvent keyEvent) {
+//                System.out.println("key pressed");
+//                checkForAndShowSuggestions();
+//            }
+//
+//            @Override
+//            public void keyReleased(KeyEvent keyEvent) {
+//                System.out.println("key released");
+//            }
+//        });
 
-        setDictionary(words);
+        predictor = new Predictor();
+        predictor.loadPredictor();
+
+        if (words.isEmpty()) {
+            loadDictionary();
+        } else {
+            setDictionary(words);
+        }
 
         typedWord = "";
         currentIndexOfSpace = 0;
@@ -181,10 +301,45 @@ class AutoSuggestor {
 
     private void loadDictionary() {
         System.out.println("Dictionary is loading");
+
+        Gson gson = new GsonBuilder().enableComplexMapKeySerialization()
+                .setPrettyPrinting().create();
+
+        BufferedReader br;
+        try {
+            br = new BufferedReader(new FileReader("dictionary.json"));
+
+            Type typeOfHashMap = new TypeToken<ArrayList<String>>() {
+            }.getType();
+            //convert the json string back to object
+            dictionary = gson.fromJson(br, typeOfHashMap);
+
+            String json = gson.toJson(dictionary);
+
+            System.out.println("Dictionary:\n" + json);
+
+        } catch (FileNotFoundException ex) {
+            System.out.println("Ex: " + ex);
+        }
     }
 
     public void saveDictionary() {
         System.out.println("Dictionary is saving");
+
+        Gson gson = new GsonBuilder().enableComplexMapKeySerialization()
+                .setPrettyPrinting().create();
+
+        String json = gson.toJson(dictionary);
+
+        System.out.println("Dictionary: " + json);
+        FileWriter writer;
+        try {
+            writer = new FileWriter("dictionary.json");
+            writer.write(json);
+            writer.close();
+        } catch (IOException ex) {
+            System.out.println("Ex: " + ex);
+        }
     }
 
     private void addKeyBindingToRequestFocusInPopUpWindow() {
@@ -223,7 +378,18 @@ class AutoSuggestor {
                                 sl.setFocused(false);
                                 autoSuggestionPopUpWindow.setVisible(false);
                                 setFocusToTextField();
-                                checkForAndShowSuggestions();//fire method as if document listener change occured and fired it
+
+
+//                                checkForAndShowSuggestions();//fire method as if document listener change occured and fired it
+
+
+                                int length = textComp.getText().length() - 1;
+
+                                if (textComp.getText().charAt(length) == ' ' || textComp.getText().charAt(length) == '.') {
+                                    checkAndPredict();
+                                } else {
+                                    checkForAndShowSuggestions();//fire method as if document listener change occured and fired it
+                                }
 
                             } else {
                                 sl.setFocused(false);
@@ -244,7 +410,14 @@ class AutoSuggestor {
                 } else {//only a single suggestion was given
                     autoSuggestionPopUpWindow.setVisible(false);
                     setFocusToTextField();
-                    checkForAndShowSuggestions();//fire method as if document listener change occured and fired it
+
+                    int length = textComp.getText().length() - 1;
+
+                    if (textComp.getText().charAt(length) == ' ' || textComp.getText().charAt(length) == '.') {
+                        checkAndPredict();
+                    } else {
+                        checkForAndShowSuggestions();//fire method as if document listener change occured and fired it
+                    }
                 }
             }
         });
@@ -288,6 +461,40 @@ class AutoSuggestor {
         }
     }
 
+    private void checkAndPredict() {
+
+        String key = getCurrentKey();
+
+        System.out.println("Current Key: " + key);
+
+        suggestionsPanel.removeAll();//remove previos words/jlabels that were added
+
+        //used to calcualte size of JWindow as new Jlabels are added
+        tW = 0;
+        tH = 0;
+
+//        boolean added = wordTyped(typedWord);
+
+        LinkedList<Entry> entries = predictor.predict(key);
+
+        System.out.println("Entries: " + entries);
+
+        if (entries == null) {
+            if (autoSuggestionPopUpWindow.isVisible()) {
+                autoSuggestionPopUpWindow.setVisible(false);
+            }
+        } else {
+
+            for (Entry entry : entries) {
+                addWordToSuggestions(entry.getWord());
+            }
+
+            showPopUpWindow();
+            setFocusToTextField();
+        }
+
+    }
+
     protected void addWordToSuggestions(String word) {
         SuggestionLabel suggestionLabel = new SuggestionLabel(word, suggestionFocusedColor, suggestionsTextColor, this);
 
@@ -296,13 +503,102 @@ class AutoSuggestor {
         suggestionsPanel.add(suggestionLabel);
     }
 
+    public String getCurrentKey() {
+        String text = textComp.getText();
+
+        int caretPosition = textComp.getCaretPosition();
+        System.out.println("XX caretPosition: " + caretPosition);
+
+
+        int lastPeriodPosition = text.lastIndexOf(".");
+        System.out.println("XX lastPeriodPosition: " + lastPeriodPosition);
+
+        if (lastPeriodPosition != -1) {
+
+            if (caretPosition > lastPeriodPosition) {
+//                System.out.println("XX Selected Text: " + text.substring(lastPeriodPosition, caretPosition));
+
+                String[] temp = text.substring(lastPeriodPosition).split(" ");
+
+                int size = temp.length;
+
+                if (size >= 2) {
+                    String key = temp[size - 2] + " " + temp[size - 1];
+                    System.out.println("Key: " + key);
+//                    String predicted = predictor.predict(key);
+
+//                    System.out.println("Predicted: " + predicted);
+
+                    return key;
+                }
+            } else {
+//                System.out.println("XX Selected Text: " + text.substring(lastPeriodPosition, caretPosition));
+
+            }
+
+
+        } else {
+            String[] temp = text.split(" ");
+
+            int size = temp.length;
+
+            if (size >= 2) {
+                String key = temp[size - 2] + " " + temp[size - 1];
+                System.out.println("Key: " + key);
+//                    String predicted = predictor.predict(key);
+
+//                    System.out.println("Predicted: " + predicted);
+
+                return key;
+            }
+
+        }
+        return "";
+    }
+
     public String getCurrentlyTypedWord() {//get newest word after last white spaceif any or the first word if no white spaces
         String text = textComp.getText();
-        System.out.println("Text: " + text);
+
+//        System.out.println("-----------------------------------------");
+//        System.out.println("Text: " + text);
+//
+//        int caretPosition = textComp.getCaretPosition();
+//        System.out.println("XX caretPosition: " + caretPosition);
+//
+//
+//        int lastPeriodPosition = text.lastIndexOf(".");
+//        System.out.println("XX lastPeriodPosition: " + lastPeriodPosition);
+
+//        if (lastPeriodPosition != -1) {
+//
+//            if (caretPosition > lastPeriodPosition) {
+////                System.out.println("XX Selected Text: " + text.substring(lastPeriodPosition, caretPosition));
+//
+//                String[] temp = text.substring(lastPeriodPosition).split(" ");
+//
+//                int size = temp.length;
+//
+//                if (size >= 2) {
+//                    String key = temp[size - 2] + " " + temp[size - 1];
+//                    System.out.println("Key: " + key);
+//                    String predicted = predictor.predict(key);
+//
+//                    System.out.println("Predicted: " + predicted);
+//                }
+//            } else {
+////                System.out.println("XX Selected Text: " + text.substring(lastPeriodPosition, caretPosition));
+//
+//            }
+//
+//
+//        }
+
+
         String wordBeingTyped = "";
         text = text.replaceAll("(\\r|\\n)", " ");//-----------------------XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX REGEX
 
-        System.out.println("Text2: " + text);
+//        System.out.println("Text2: " + text);
+//        System.out.println("++++++++++++++++++++++++++++++++++++++++++++");
 
         if (text.contains(" ")) {
             int tmp = text.lastIndexOf(" ");
@@ -319,6 +615,8 @@ class AutoSuggestor {
         } else {
             wordBeingTyped = text;
         }
+
+//        System.out.println("wordBeingTyped.trim(): " + wordBeingTyped.trim());
         return wordBeingTyped.trim();
     }
 
@@ -395,7 +693,10 @@ class AutoSuggestor {
     }
 
     public void addToDictionary(String word) {
-        dictionary.add(word);
+
+        if (!dictionary.contains(word)) {
+            dictionary.add(word);
+        }
     }
 
     boolean wordTyped(String typedWord) {
@@ -435,7 +736,7 @@ class SuggestionLabel extends JLabel {
     private final AutoSuggestor autoSuggestor;
     private Color suggestionsTextColor, suggestionBorderColor;
 
-    private static final Font SINHALA_FONT = new java.awt.Font("Iskoola Pota", 0, 18);
+    private static final Font SINHALA_FONT = new Font("Iskoola Pota", 0, 18);
 
     public SuggestionLabel(String string, final Color borderColor, Color suggestionsTextColor, AutoSuggestor autoSuggestor) {
         super(string);

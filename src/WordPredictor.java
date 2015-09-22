@@ -93,6 +93,7 @@ public class WordPredictor {
                 super.windowClosing(e); //To change body of generated methods, choose Tools | Templates.
                 System.out.println("Window is closing");
                 autoSuggestor.saveDictionary();
+                autoSuggestor.savePredictor();
             }
 
         });
@@ -144,13 +145,15 @@ class AutoSuggestor {
         @Override
         public void insertUpdate(DocumentEvent de) {
             String typed = textComp.getText().substring(de.getOffset());
-            System.out.println("Typed: " + typed);
+//            System.out.println("Typed: " + typed);
 
             if (typed.equals(" ") || typed.equals(".")) {
 
                 updateDictionary();
-                updatePredictor();
-                System.out.println("Space or . typed");
+                if (typed.equals(".")) {
+                    updatePredictor();
+                }
+//                System.out.println("Space or . typed");
                 checkAndPredict();
             } else {
                 checkForAndShowSuggestions();
@@ -215,30 +218,31 @@ class AutoSuggestor {
 
     private void updatePredictor() {
         String text = textComp.getText().trim();
-        String word;
 
-        int lastPeriodLocation = text.lastIndexOf(".");
-        int lastSpaceLocation = text.lastIndexOf(" ");
+        String sentence = "";
 
-        if (lastPeriodLocation > -1) {
+        System.out.println("Text: " + text);
+        text = text.substring(0, text.length() - 1);
+        System.out.println("Text2: " + text);
 
-            word = text.substring(lastPeriodLocation);
+        if (text.length() > 0) {
 
-            lastSpaceLocation = word.lastIndexOf(" ");
+            int lastPeriodLocation = text.trim().lastIndexOf(".");
 
-            if (lastSpaceLocation > -1) {
-                word = word.substring(lastSpaceLocation);
+            if (lastPeriodLocation > -1) {
+
+                sentence = text.substring(lastPeriodLocation + 1);
+                System.out.println("Sentence: " + text.substring(lastPeriodLocation + 1));
+
             } else {
-                if (text.equals(".")) {
-//                    word =
-                }
+                System.out.println("Sentence: " + text);
+                sentence = text;
             }
+            predictor.showMap();
+            predictor.addSentence(sentence);
 
+            predictor.showMap();
 
-        } else {
-            if (lastSpaceLocation > -1) {
-                word = text.substring(lastSpaceLocation);
-            }
         }
 
     }
@@ -340,6 +344,11 @@ class AutoSuggestor {
         } catch (IOException ex) {
             System.out.println("Ex: " + ex);
         }
+    }
+
+    public void savePredictor(){
+
+        predictor.savePredictor();
     }
 
     private void addKeyBindingToRequestFocusInPopUpWindow() {
@@ -507,11 +516,11 @@ class AutoSuggestor {
         String text = textComp.getText();
 
         int caretPosition = textComp.getCaretPosition();
-        System.out.println("XX caretPosition: " + caretPosition);
+//        System.out.println("XX caretPosition: " + caretPosition);
 
 
         int lastPeriodPosition = text.lastIndexOf(".");
-        System.out.println("XX lastPeriodPosition: " + lastPeriodPosition);
+//        System.out.println("XX lastPeriodPosition: " + lastPeriodPosition);
 
         if (lastPeriodPosition != -1) {
 
@@ -524,7 +533,7 @@ class AutoSuggestor {
 
                 if (size >= 2) {
                     String key = temp[size - 2] + " " + temp[size - 1];
-                    System.out.println("Key: " + key);
+//                    System.out.println("Key: " + key);
 //                    String predicted = predictor.predict(key);
 
 //                    System.out.println("Predicted: " + predicted);
@@ -544,7 +553,7 @@ class AutoSuggestor {
 
             if (size >= 2) {
                 String key = temp[size - 2] + " " + temp[size - 1];
-                System.out.println("Key: " + key);
+//                System.out.println("Key: " + key);
 //                    String predicted = predictor.predict(key);
 
 //                    System.out.println("Predicted: " + predicted);
@@ -655,8 +664,8 @@ class AutoSuggestor {
             try {
                 windowX = (int) (rect.getX() + 15) + this.getContainer().getLocation().x;
                 windowY = (int) (rect.getY() + (rect.getHeight() * 3)) + this.getContainer().getLocation().y;
-                System.out.println("x: " + windowX);
-                System.out.println("y: " + windowY);
+//                System.out.println("x: " + windowX);
+//                System.out.println("y: " + windowY);
             } catch (Exception e) {
             }
 
@@ -694,7 +703,7 @@ class AutoSuggestor {
 
     public void addToDictionary(String word) {
 
-        if (!dictionary.contains(word)) {
+        if (!dictionary.contains(word) && word.length() > 1) {
             dictionary.add(word);
         }
     }

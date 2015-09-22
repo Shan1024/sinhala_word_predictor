@@ -3,10 +3,14 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.*;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.HashMap;
@@ -17,7 +21,6 @@ import java.util.LinkedList;
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 /**
  * @author Shan
  */
@@ -58,11 +61,16 @@ public class Predictor {
 
         String json = gson.toJson(nGram);
 
-        FileWriter writer;
+//        FileWriter writer;
         try {
-            writer = new FileWriter("data.json");
-            writer.write(json);
-            writer.close();
+//            writer = new FileWriter("data.json");
+//            writer.write(json);
+//            writer.close();
+
+            Writer out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("data.json"), "UTF-8"));
+            out.write(json);
+            out.close();
+
         } catch (IOException ex) {
             System.out.println("Ex: " + ex);
         }
@@ -81,7 +89,7 @@ public class Predictor {
     }
 
     /* Prediction methods */
-    public  LinkedList<Entry>  predict(String key) {
+    public LinkedList<Entry> predict(String key) {
         String temp = "";
 
         LinkedList<Entry> entries = new LinkedList<>();

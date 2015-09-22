@@ -1,6 +1,7 @@
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+import java.awt.BorderLayout;
 import javafx.scene.input.KeyCode;
 
 import java.awt.Color;
@@ -11,10 +12,14 @@ import java.awt.Rectangle;
 import java.awt.Window;
 import java.awt.event.*;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -24,6 +29,7 @@ import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.JWindow;
@@ -44,9 +50,10 @@ public class WordPredictor {
         JFrame frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setTitle("සිංහල වචන අනුමාන කරණය");
+        frame.setPreferredSize(new Dimension(600, 400));
 
         JTextArea textArea = new JTextArea();
-        textArea.setPreferredSize(new Dimension(600, 400));
+        textArea.setWrapStyleWord(true);
         textArea.setFont(SINHALA_FONT);
 
         //create words for dictionary could also use null as parameter for AutoSuggestor(..,..,null,..,..,..,..) and than call AutoSuggestor#setDictionary after AutoSuggestr insatnce has been created
@@ -81,10 +88,14 @@ public class WordPredictor {
 
         };
 
-        JPanel panel = new JPanel();
-        panel.add(textArea);
+//        JPanel panel = new JPanel();
+        JScrollPane scrollPane = new JScrollPane();
+        scrollPane.setViewportView(textArea);
 
-        frame.add(panel);
+//        panel.add(scrollPane);
+        frame.getContentPane().setLayout(new BorderLayout());
+
+        frame.getContentPane().add(scrollPane, BorderLayout.CENTER);
 
         frame.addWindowListener(new WindowAdapter() {
 
@@ -99,9 +110,9 @@ public class WordPredictor {
         });
 
         //Setting locale to Sinhala
-//        Locale loc = new Locale("si", "LK");
-//        textArea.setLocale(loc);
-//        textArea.getInputContext().selectInputMethod(loc);
+        Locale loc = new Locale("si", "LK");
+        textArea.setLocale(loc);
+        textArea.getInputContext().selectInputMethod(loc);
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
@@ -174,7 +185,11 @@ class AutoSuggestor {
 
     private void updateDictionary() {
 
-        String text = textComp.getText().replaceAll("\\.", " ").trim();
+        String text = textComp.getText();
+
+        text = text.replaceAll("[!?(),]", " ").replaceAll("\\s+", " ");
+
+        text = text.replaceAll("\\.", " ").trim();
 //        System.out.println("Text: "+text);
         String word = text;
 
@@ -186,7 +201,6 @@ class AutoSuggestor {
 
 //        int lastPeriodLocation = text.lastIndexOf(".");
 //        int lastSpaceLocation = text.lastIndexOf(" ");
-
 //        if (lastPeriodLocation > -1) {
 //
 //            word = text.substring(lastPeriodLocation);
@@ -207,8 +221,6 @@ class AutoSuggestor {
 //                word = text.substring(lastSpaceLocation);
 //            }
 //        }
-
-
 //        System.out.println("Checking Last Word..... ");
         System.out.println("Adding last word to the dictionary: " + word.trim());
         addToDictionary(word.trim());
@@ -278,7 +290,6 @@ class AutoSuggestor {
 //                System.out.println("key released");
 //            }
 //        });
-
         predictor = new Predictor();
         predictor.loadPredictor();
 
@@ -336,17 +347,22 @@ class AutoSuggestor {
         String json = gson.toJson(dictionary);
 
         System.out.println("Dictionary: " + json);
-        FileWriter writer;
+//        FileWriter writer;
         try {
-            writer = new FileWriter("dictionary.json");
-            writer.write(json);
-            writer.close();
+//            writer = new FileWriter("dictionary.json");
+//            writer.write(json);
+//            writer.close();
+
+            Writer out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("dictionary.json"), "UTF-8"));
+            out.write(json);
+            out.close();
+
         } catch (IOException ex) {
             System.out.println("Ex: " + ex);
         }
     }
 
-    public void savePredictor(){
+    public void savePredictor() {
 
         predictor.savePredictor();
     }
@@ -388,10 +404,7 @@ class AutoSuggestor {
                                 autoSuggestionPopUpWindow.setVisible(false);
                                 setFocusToTextField();
 
-
 //                                checkForAndShowSuggestions();//fire method as if document listener change occured and fired it
-
-
                                 int length = textComp.getText().length() - 1;
 
                                 if (textComp.getText().charAt(length) == ' ' || textComp.getText().charAt(length) == '.') {
@@ -483,7 +496,6 @@ class AutoSuggestor {
         tH = 0;
 
 //        boolean added = wordTyped(typedWord);
-
         LinkedList<Entry> entries = predictor.predict(key);
 
         System.out.println("Entries: " + entries);
@@ -513,11 +525,10 @@ class AutoSuggestor {
     }
 
     public String getCurrentKey() {
-        String text = textComp.getText();
+        String text = textComp.getText().replaceAll("(\\r|\\n)", " ");
 
         int caretPosition = textComp.getCaretPosition();
 //        System.out.println("XX caretPosition: " + caretPosition);
-
 
         int lastPeriodPosition = text.lastIndexOf(".");
 //        System.out.println("XX lastPeriodPosition: " + lastPeriodPosition);
@@ -537,14 +548,12 @@ class AutoSuggestor {
 //                    String predicted = predictor.predict(key);
 
 //                    System.out.println("Predicted: " + predicted);
-
                     return key;
                 }
             } else {
 //                System.out.println("XX Selected Text: " + text.substring(lastPeriodPosition, caretPosition));
 
             }
-
 
         } else {
             String[] temp = text.split(" ");
@@ -557,7 +566,6 @@ class AutoSuggestor {
 //                    String predicted = predictor.predict(key);
 
 //                    System.out.println("Predicted: " + predicted);
-
                 return key;
             }
 
@@ -577,7 +585,6 @@ class AutoSuggestor {
 //
 //        int lastPeriodPosition = text.lastIndexOf(".");
 //        System.out.println("XX lastPeriodPosition: " + lastPeriodPosition);
-
 //        if (lastPeriodPosition != -1) {
 //
 //            if (caretPosition > lastPeriodPosition) {
@@ -601,14 +608,11 @@ class AutoSuggestor {
 //
 //
 //        }
-
-
         String wordBeingTyped = "";
         text = text.replaceAll("(\\r|\\n)", " ");//-----------------------XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX REGEX
 
 //        System.out.println("Text2: " + text);
 //        System.out.println("++++++++++++++++++++++++++++++++++++++++++++");
-
         if (text.contains(" ")) {
             int tmp = text.lastIndexOf(" ");
             if (tmp >= currentIndexOfSpace) {
@@ -656,8 +660,13 @@ class AutoSuggestor {
         } else {//calculate x and y for JWindow on any JTextComponent using the carets position
             Rectangle rect = null;
             try {
-                rect = textComp.getUI().modelToView(textComp, textComp.getCaret().getDot());//get carets position
-            } catch (BadLocationException ex) {
+//                textComp.getCaret().getMagicCaretPosition()
+                if (textComp.hasFocus()) {
+                    rect = textComp.getUI().modelToView(textComp, textComp.getCaret().getDot());//get carets position
+                } else {
+                    rect = new Rectangle(100, 100, 10, 10);
+                }
+            } catch (Exception ex) {
 //                ex.printStackTrace();
             }
 
@@ -671,11 +680,15 @@ class AutoSuggestor {
 
         }
 
-        //show the pop up
-        autoSuggestionPopUpWindow.setLocation(windowX, windowY);
+        try {
+            //show the pop up
+            autoSuggestionPopUpWindow.setLocation(windowX, windowY);
 //        autoSuggestionPopUpWindow.setPreferredSize(new Dimension(50, 30));
-        autoSuggestionPopUpWindow.revalidate();
-        autoSuggestionPopUpWindow.repaint();
+            autoSuggestionPopUpWindow.revalidate();
+            autoSuggestionPopUpWindow.repaint();
+        } catch (Exception e) {
+            System.out.println("Exception: " + e);
+        }
 
     }
 
